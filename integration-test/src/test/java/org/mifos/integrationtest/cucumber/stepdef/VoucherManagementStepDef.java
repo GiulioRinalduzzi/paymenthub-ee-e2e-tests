@@ -238,7 +238,6 @@ public class VoucherManagementStepDef extends BaseStepDef {
             }
 
             try {
-                // ObjectMapper objectMapper = new ObjectMapper();
                 JsonNode rootNode = objectMapper.readTree(scenarioScopeState.callbackBody);
 
                 JsonNode voucherInstructionsNode = rootNode.get("voucherInstructions");

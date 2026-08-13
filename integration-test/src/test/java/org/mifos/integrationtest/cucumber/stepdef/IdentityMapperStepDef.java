@@ -432,8 +432,6 @@ public class IdentityMapperStepDef extends BaseStepDef {
         for (int i = 0; i < noOfBeneficiary; i++) {
             BeneficiaryDTO beneficiaryDTO = registerBeneficiaryBody.getBeneficiaries().get(i);
             beneficiaryDTO.setPaymentModality(getPaymentModality(paymentModality));
-            // BeneficiaryDTO beneficiaryDTO = new BeneficiaryDTO("94049169714828912115",
-            // getPaymentModality(paymentModality), "12345678", "ABCDEF");
             beneficiaryDTOList.add(beneficiaryDTO);
         }
         requestId = generateUniqueNumber(10);
@@ -447,8 +445,6 @@ public class IdentityMapperStepDef extends BaseStepDef {
         for (int i = 0; i < noOfBeneficiary; i++) {
             BeneficiaryDTO beneficiaryDTO = registerBeneficiaryBody.getBeneficiaries().get(i);
             beneficiaryDTO.setBankingInstitutionCode(bankingInstitutionCode);
-            // BeneficiaryDTO beneficiaryDTO = new BeneficiaryDTO("94049169714828912115","00", "12345678",
-            // bankingInstitutionCode);
             beneficiaryDTOList.add(beneficiaryDTO);
         }
         requestId = generateUniqueNumber(10);
@@ -461,8 +457,6 @@ public class IdentityMapperStepDef extends BaseStepDef {
         for (int i = 0; i < noOfBeneficiary; i++) {
             BeneficiaryDTO beneficiaryDTO = registerBeneficiaryBody.getBeneficiaries().get(i);
             beneficiaryDTO.setFinancialAddress(financialAddress);
-            // BeneficiaryDTO beneficiaryDTO = new BeneficiaryDTO("94049169714828912115","00", "12345678",
-            // bankingInstitutionCode);
             beneficiaryDTOList.add(beneficiaryDTO);
         }
         requestId = generateUniqueNumber(10);

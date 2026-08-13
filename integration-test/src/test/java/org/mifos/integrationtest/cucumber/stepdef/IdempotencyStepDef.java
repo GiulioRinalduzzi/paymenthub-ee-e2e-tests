@@ -54,7 +54,6 @@ public class IdempotencyStepDef extends BaseStepDef {
         scenarioScopeState.response = RestAssured.given(requestSpec).baseUri(channelConnectorConfig.channelConnectorContactPoint)
                 .body(collectionRequestBody.toString()).expect().spec(new ResponseSpecBuilder().expectStatusCode(expectedStatus).build())
                 .when().post(channelConnectorConfig.collectionEndpoint).andReturn().asString();
-        // CollectionResponse response = (new Gson()).fromJson(json, CollectionResponse.class);
         assertThat(scenarioScopeState.response).isNotEmpty();
     }
 
