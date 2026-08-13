@@ -1,0 +1,27 @@
+/*
+ * Copyright 2026 The Mifos Initiative.
+ * Licensed under the Mozilla Public License 2.0.
+ */
+
+// Published coordinates (group, version) are NOT hardcoded in the build scripts:
+// they are read from gradle.properties so they can be renamed without touching
+// any module.
+rootProject.name = 'paymenthub-ee-e2e-tests'
+
+// integration-test — the end-to-end test suite (former ph-ee-integration-test).
+//                    Cucumber features driven by a JUnit runner, with WireMock
+//                    for the services it needs to fake. It is not a service: it
+//                    ships no Docker image of its own and nothing deploys it.
+//                    You run it against an already-deployed stack.
+include 'integration-test'
+
+// mock-payment-schema — a stand-in payment scheme used by the tests and by the
+//                       Gazelle demo flows (former
+//                       ph-ee-connector-mock-payment-schema). Unlike the suite
+//                       above this one is a Spring Boot service and ships its
+//                       own Docker image, built from the Dockerfile in its
+//                       module directory with the repository root as the build
+//                       context. It lives here rather than with the product
+//                       connectors because it is test tooling: it mocks a
+//                       scheme, it does not integrate with one.
+include 'mock-payment-schema'

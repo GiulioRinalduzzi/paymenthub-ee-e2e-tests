@@ -1,0 +1,276 @@
+plugins {
+    id 'org.springframework.boot' version '3.4.4'
+    id 'java'
+    id 'eclipse'
+    id 'checkstyle'
+    id 'com.diffplug.spotless' version '6.19.0'
+    id 'com.adarshr.test-logger' version '3.2.0'
+}
+
+apply plugin:'com.diffplug.spotless'
+spotless {
+    format 'misc', {
+        target '**/*.md', '**/*.properties', '**/.gitignore', '**/.openapi-generator-ignore', '**/*.yml', '**/*.xml', '**/**.json', '**/*.sql'
+        targetExclude '**/build/**', '**/bin/**', '**/.settings/**', '**/.idea/**', '**/.gradle/**', '**/gradlew.bat', '**/licenses/**', '**/banner.txt', '.vscode/**'
+        indentWithSpaces(4)
+        endWithNewline()
+        trimTrailingWhitespace()
+    }
+
+    groovyGradle {
+        target '*.gradle', '**/*.gradle'
+        targetExclude '**/build/**'
+        greclipse()
+        indentWithSpaces(4)
+        endWithNewline()
+        trimTrailingWhitespace()
+    }
+
+    lineEndings 'UNIX'
+}
+
+configure(this) {
+    // NOTE: order matters!
+    apply plugin: 'java'
+    apply plugin: 'idea'
+    apply plugin: 'eclipse'
+    apply plugin: 'checkstyle'
+    configurations {
+        implementation.setCanBeResolved(true)
+        api.setCanBeResolved(true)
+    }
+    tasks.withType(JavaCompile) {
+        options.compilerArgs += [
+            "-Xlint:unchecked",
+            "-Xlint:cast",
+            "-Xlint:auxiliaryclass",
+            "-Xlint:deprecation",
+            "-Xlint:dep-ann",
+            "-Xlint:divzero",
+            "-Xlint:empty",
+            "-Xlint:exports",
+            "-Xlint:fallthrough",
+            "-Xlint:finally",
+            "-Xlint:module",
+            "-Xlint:opens",
+            "-Xlint:options",
+            "-Xlint:overloads",
+            "-Xlint:overrides",
+            "-Xlint:path",
+            "-Xlint:processing",
+            "-Xlint:removal",
+            "-Xlint:requires-automatic",
+            "-Xlint:requires-transitive-automatic",
+            "-Xlint:try",
+            "-Xlint:varargs",
+            "-Xlint:preview",
+            "-Xlint:static",
+            // -Werror needs to be disabled because EclipseLink's static weaving doesn't generate warning-free code
+            // and during an IntelliJ recompilation, it fails
+            //"-Werror",
+            "-Xmaxwarns",
+            1500,
+            "-Xmaxerrs",
+            1500
+        ]
+        options.deprecation = true
+    }
+    // Configuration for the spotless plugin
+    // https://github.com/diffplug/spotless/tree/main/plugin-gradle
+    spotless {
+        java {
+            targetExclude '**/build/**', '**/bin/**', '**/out/**'
+            importOrder() //sort imports alphabetically
+            removeUnusedImports()
+            eclipse().configFile "$projectDir/config/formatter.xml"
+            endWithNewline()
+            trimTrailingWhitespace()
+            // Enforce style modifier order
+            custom 'Modifier ordering', {
+                def modifierRanking = [
+                    public      : 1,
+                    protected   : 2,
+                    private     : 3,
+                    abstract    : 4,
+                    default     : 5,
+                    static      : 6,
+                    final       : 7,
+                    transient   : 8,
+                    volatile    : 9,
+                    synchronized: 10,
+                    native      : 11,
+                    strictfp    : 12]
+                // Find any instance of multiple modifiers. Lead with a non-word character to avoid
+                // accidental matching against for instance, "an alternative default value"
+                it.replaceAll(/\W(?:public |protected |private |abstract |default |static |final |transient |volatile |synchronized |native |strictfp ){2,}/, {
+                    // Do not replace the leading non-word character.  Identify the modifiers
+                    it.replaceAll(/(?:public |protected |private |abstract |default |static |final |transient |volatile |synchronized |native |strictfp ){2,}/, {
+                        // Sort the modifiers according to the ranking above
+                        it.split().sort({ modifierRanking[it] }).join(' ') + ' '
+                    }
+                    )
+                }
+                )
+            }
+        }
+        lineEndings 'UNIX'
+    }
+    // If we are running Gradle within Eclipse to enhance classes,
+    // set the classes directory to point to Eclipse's default build directory
+    if (project.hasProperty('env') && project.getProperty('env') == 'eclipse') {
+        sourceSets.main.java.outputDir = file("$projectDir/bin/main")
+    }
+    // Configuration for the Checkstyle plugin
+    // https://docs.gradle.org/current/userguide/checkstyle_plugin.html
+    dependencies {
+        checkstyle 'com.puppycrawl.tools:checkstyle:10.3.1'
+        checkstyle 'com.github.sevntu-checkstyle:sevntu-checks:1.42.0'
+    }
+}
+
+group = 'org.mifos'
+
+// The checkstyle plugin looks for $rootDir/config/checkstyle/checkstyle.xml by
+// default. Since this became a module, $rootDir is the repository root and the
+// config lives here, so the path is given explicitly.
+checkstyle {
+    toolVersion = '10.9.3'
+    configDirectory = file("${projectDir}/config/checkstyle")
+    configFile = file("${projectDir}/config/checkstyle/checkstyle.xml")
+}
+sourceCompatibility = JavaVersion.VERSION_21
+targetCompatibility = JavaVersion.VERSION_21
+
+repositories {
+    mavenLocal()
+    mavenCentral()
+    maven {
+        url = uri('https://repo.maven.apache.org/maven2')
+    }
+
+    maven {
+        url = uri('https://mifos.jfrog.io/artifactory/phee-gradle-local')
+    }
+
+    // openapi-java-client (the generated Fineract client, package
+    // org.apache.fineract.client.*) lives here. It used to be pulled from
+    // jfrog.sandbox.fynarfin.io, which no longer resolves at all.
+    maven {
+        url = uri('https://mifos.jfrog.io/artifactory/mifosx-gradle-local')
+    }
+}
+
+dependencies {
+    // Mifos Platform BOM pins Spring Boot 3.4, Camel 4, Zeebe 8, Jakarta EE 10
+    // and every other shared library version. Do NOT hardcode managed versions.
+    // This is a leaf project (a test suite, nothing depends on it), so
+    // enforcedPlatform() is the right choice.
+    implementation enforcedPlatform('org.mifos:paymenthub-ee-bom:2.0.0-SNAPSHOT')
+    // Annotation processor paths do not inherit from implementation, so the platform
+    // has to be declared again here or lombok resolves with no version.
+    testAnnotationProcessor enforcedPlatform('org.mifos:paymenthub-ee-bom:2.0.0-SNAPSHOT')
+
+    implementation 'org.springframework.boot:spring-boot-starter'
+    // WireMock 2.x ships as wiremock-jre8 and embeds Jetty 9 with javax.servlet.
+    // WireMock 3.x (groupId org.wiremock) is the Jakarta line and the only one
+    // that runs under Spring Boot 3. The package names the tests import
+    // (com.github.tomakehurst.wiremock.*) are unchanged.
+    //
+    // It has to be the standalone (shaded) artifact, because we import the BOM with
+    // enforcedPlatform and WireMock brings its own Jetty:
+    //   - plain org.wiremock:wiremock wants Jetty 11, gets the BOM's Jetty 12, and
+    //     dies at startup with "FatalStartupException: Jetty 11 is not present";
+    //   - org.wiremock:wiremock-jetty12 is built against Jetty ee10 12.0.16, gets
+    //     12.0.18 from the BOM, starts, and then serves 500 on every admin call
+    //     because the servlet comes up with a null requestHandler.
+    // wiremock-standalone ships its own Jetty and Jackson relocated inside the jar,
+    // so nothing the BOM pins can reach them. The classes the tests import
+    // (com.github.tomakehurst.wiremock.*) are NOT relocated, so no code changes.
+    //
+    // Not managed by any imported BOM, so the version is pinned here.
+    testImplementation "org.wiremock:wiremock-standalone:${wiremockVersion}"
+    // The step definitions use Jackson directly (ObjectMapper, @JsonProperty,
+    // @JsonInclude). They used to get it for free through wiremock-jre8; the
+    // standalone jar has Jackson relocated inside it, so it no longer leaks onto the
+    // test classpath. Declared explicitly, version from the BOM.
+    testImplementation 'com.fasterxml.jackson.core:jackson-databind'
+    testImplementation 'com.fasterxml.jackson.core:jackson-annotations'
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    implementation 'org.mifos:paymenthub-ee-core:2.0.0-SNAPSHOT'
+    testImplementation "com.google.truth:truth:${truthVersion}"
+    testImplementation 'com.google.code.gson:gson'
+    testImplementation('io.rest-assured:rest-assured') {
+        exclude group: 'org.codehaus.groovy'
+    }
+
+    testCompileOnly 'org.projectlombok:lombok'
+    testAnnotationProcessor 'org.projectlombok:lombok'
+    implementation "io.cucumber:cucumber-java:${cucumberVersion}"
+    implementation "io.cucumber:cucumber-spring:${cucumberVersion}"
+    testImplementation "io.cucumber:cucumber-junit:${cucumberVersion}"
+
+    testRuntimeOnly("org.junit.vintage:junit-vintage-engine")
+    checkstyle 'com.puppycrawl.tools:checkstyle:10.9.3'
+    checkstyle 'com.github.sevntu-checkstyle:sevntu-checks:1.44.1'
+    // Generated Fineract client. The tests import org.apache.fineract.client.models.*
+    // from it. Was 2.0.4-SNAPSHOT on the Fynarfin sandbox; 2.0.4-gazelle is the same
+    // version published on Mifos JFrog.
+    implementation "org.mifos:openapi-java-client:${openapiJavaClientVersion}"
+    testImplementation 'org.hamcrest:hamcrest'
+    implementation "com.opencsv:opencsv:${opencsvVersion}"
+    testImplementation "org.apache.commons:commons-csv:${commonsCsvVersion}"
+    testImplementation 'org.awaitility:awaitility'
+    implementation "commons-validator:commons-validator:${commonsValidatorVersion}"
+}
+
+tasks.named('test') {
+    useJUnitPlatform()
+}
+
+
+configurations {
+    cucumberRuntime {
+        extendsFrom testImplementation
+    }
+}
+
+// testlogger is the extension of the com.adarshr.test-logger plugin. It used to sit
+// inside the configurations block above, where Gradle read it as the name of a
+// configuration instead. Gradle 7.4 let that pass silently; Gradle 8 - which Java 21
+// requires - rejects it with "Could not find method theme() ... on configuration
+// ':testlogger'". Moved to the top level, where the plugin looks for it.
+testlogger {
+    // pick a theme - mocha, standard, plain, mocha-parallel, standard-parallel or plain-parallel
+    theme 'mocha'
+    showSkipped false
+    showStackTraces true
+}
+
+test {
+    systemProperty "cucumber.filter.tags", System.getProperty("cucumber.filter.tags")
+    systemProperty "cucumber.filter.name", System.getProperty("cucumber.filter.name")
+}
+task cucumberCli() {
+    dependsOn assemble, testClasses
+    doLast {
+        javaexec {
+            main = "io.cucumber.core.cli.Main"
+            classpath = configurations.cucumberRuntime + sourceSets.main.output + sourceSets.test.output
+            args = [
+                '--plugin',
+                'html:cucumber-report',
+                '--plugin',
+                'json:cucumber.json',
+                '--plugin',
+                'pretty',
+                '--plugin',
+                'html:build/cucumber-report.html',
+                '--plugin',
+                'json:build/cucumber-report.json',
+                '--glue',
+                'org.mifos.integrationtest.cucumber',
+                'src/test/java/resources'
+            ]
+        }
+    }
+}
