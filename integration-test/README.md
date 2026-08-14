@@ -1,13 +1,25 @@
-# ph-ee-connector-integration-test
+# integration-test
 
 ![CUCUMBER](https://img.shields.io/badge/Cucumber-3DDC84?style=for-the-badge&logo=cucumber&logoColor=white)
 <br>
 Cucumber is a test writing framework which is used to achieve the idea of BDD(Behaviour Driven Development). To know more about BDD and why it is considered [read this article](https://www.tutorialspoint.com/behavior_driven_development/behavior_test_driven_development.htm).
 
+This is a module of [paymenthub-ee-e2e-tests](../README.md), so run every command from the
+**repository root** with the module prefix.
+
 ## Run test suite
-./gradlew cucumberCli
-OR
-helm test <Extended Chart of PH-EE-Engine>
+
+The suite talks to a stack that is already deployed — it does not start one. The hosts it calls come
+from [`src/main/resources/application.yaml`](src/main/resources/application.yaml), and each one can
+be overridden with an environment variable.
+
+```shell
+./gradlew :integration-test:test
+```
+
+```shell
+./gradlew :integration-test:cucumberCli
+```
 
 ## Three main components of cucumber
 1. Ghrekin feature file
@@ -18,13 +30,15 @@ helm test <Extended Chart of PH-EE-Engine>
     Integration test can be spefcific to spring applicaiton, camel specific or any other environment. So cucmber can be configured with different context within which each of the step definition will be executed.
 
 ## Dependency
-Below are the required dependency to work in the spring and camel environment.
+These are the dependencies needed to work in the spring and camel environment. The versions are not
+written here: they come from the `org.mifos:paymenthub-ee-bom` platform, and the Cucumber version
+comes from `cucumberVersion` in the root `gradle.properties`. See
+[`build.gradle`](build.gradle) for the real list.
 ```gradle
-implementation 'io.cucumber:cucumber-java:7.8.1'
-implementation 'io.cucumber:cucumber-spring:7.8.1'
-testImplementation 'io.cucumber:cucumber-junit:7.8.1'
-testImplementation 'org.apache.camel:camel-test:3.4.0'
-testImplementation 'org.springframework.boot:spring-boot-starter-test:2.5.4'
+implementation "io.cucumber:cucumber-java:${cucumberVersion}"
+implementation "io.cucumber:cucumber-spring:${cucumberVersion}"
+testImplementation "io.cucumber:cucumber-junit:${cucumberVersion}"
+testImplementation 'org.springframework.boot:spring-boot-starter-test'
 ```
 
 ## 1. Writing a feature file
@@ -84,7 +98,12 @@ Where the `glue` property is for defining the package which contains the step de
             "json:cucumber.json",
             "pretty",
             "html:build/cucumber-report.html",
-            "json:build/cucumber-report.json"
+            "json:build/cucumber-report.json",
+            "junit:build/cucumber.xml"
+        })
+public class TestRunner {}
+```
+
 ## Adding gradle configuration
 Adding gradle configuration will allow us to run all the cucumber feature file at using using a CLI.
 
@@ -103,12 +122,11 @@ task cucumberCli() {
             classpath = configurations.cucumberRuntime + sourceSets.main.output + sourceSets.test.output
             args = [
                     '--plugin', 'pretty',
-                    '--plugin', 'html:target/cucumber-report.html',
-                    '--glue', 'org.mifos.connector.slcb.cucumber',
+                    '--plugin', 'html:build/cucumber-report.html',
+                    '--glue', 'org.mifos.integrationtest.cucumber',
                     'src/test/java/resources']
         }
-)
-public class TestRunner {
+    }
 }
 ```
 Adding below configuration will allow us to wire the CLI arguments be passed in the actual runner configuration while running the cucumber test using JUnit.
@@ -120,26 +138,20 @@ test {
 ## Running an integration test
 Use below command to execute the integration test.
 ```shell
-./gradlew test -Dcucumber.filter.tags="<cucumber tag>"
+./gradlew :integration-test:test -Dcucumber.filter.tags="<cucumber tag>"
 ```
 Where `<cucumber tag>` has to be replaced with valid tag, for example if you are willing to run test cases related to g2p scenario then pass the tag `@gov`. If `-Dcucumber.filter.tags` flag is omitted then all the test cases would be triggered independent of the tag.
-```shell
-* Try:
-> Run with --stacktrace option to get the stack trace.
-> Run with --debug option to get more log output.
-> Run with --scan to get full insights.
-```
 
-# Checkstyle
+## Checkstyle
 Use below command to execute the checkstyle test.
 ```shell
-./gradlew checkstyleMain
+./gradlew :integration-test:checkstyleMain
 ```
 
 ## Spotless
 Use below command to execute the spotless apply.
 ```shell
-./gradlew spotlessApply
+./gradlew :integration-test:spotlessApply
 ```
 
 ## FAQs

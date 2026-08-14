@@ -180,7 +180,11 @@ configure(this) {
 
     tasks.withType(JavaCompile) {
         options.errorprone {
-            enabled = project.gradle.startParameter.taskNames.contains('build') || project.gradle.startParameter.taskNames.contains('check')
+            // Only run Error Prone on build and check, not on a plain compileJava.
+            // endsWith, not contains: now that this is a module the task is invoked
+            // as ':mock-payment-schema:build', and an exact match would never see it,
+            // so Error Prone would silently do nothing.
+            enabled = project.gradle.startParameter.taskNames.any { it.endsWith('build') || it.endsWith('check') }
             disableWarningsInGeneratedCode = true
             excludedPaths = ".*/build/.*"
             disable(
