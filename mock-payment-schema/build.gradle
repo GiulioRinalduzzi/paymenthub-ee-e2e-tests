@@ -6,7 +6,6 @@ plugins {
     id 'maven-publish'
     id 'eclipse'
     id 'org.springframework.boot' version '3.4.4'
-    id 'io.spring.dependency-management' version '1.1.6'   // ← added
     id 'checkstyle'
     id 'com.diffplug.spotless' version '6.19.0'
     id "org.springdoc.openapi-gradle-plugin" version "1.9.0"
@@ -45,6 +44,11 @@ dependencies {
     // every other shared library version. Do NOT hardcode managed versions below.
     // This is a deployable application (leaf node), so use enforcedPlatform().
     implementation enforcedPlatform("org.mifos:paymenthub-ee-bom:${bomVersion}")
+    // Annotation processor paths do not inherit from implementation, so the platform
+    // has to be declared again here or lombok resolves with no version. Same as
+    // integration-test.
+    annotationProcessor enforcedPlatform("org.mifos:paymenthub-ee-bom:${bomVersion}")
+    testAnnotationProcessor enforcedPlatform("org.mifos:paymenthub-ee-bom:${bomVersion}")
 
     implementation "org.mifos:paymenthub-ee-core:${coreVersion}"
 
@@ -67,7 +71,7 @@ dependencies {
 
     implementation 'com.google.code.gson:gson'
     implementation 'org.json:json'
-    implementation 'com.amazonaws:aws-java-sdk-s3:1.12.600'
+    implementation "com.amazonaws:aws-java-sdk-s3:${awsSdkVersion}"
     implementation 'com.azure:azure-storage-blob'
     implementation 'com.fasterxml.jackson.dataformat:jackson-dataformat-csv'
     implementation 'org.springframework.kafka:spring-kafka'
@@ -89,13 +93,13 @@ dependencies {
     // Testing
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
     testImplementation "org.apache.camel:camel-test-spring-junit5"
-    testImplementation 'io.cucumber:cucumber-java:7.15.0'
-    testImplementation 'io.cucumber:cucumber-spring:7.15.0'
-    testImplementation 'io.cucumber:cucumber-junit-platform-engine:7.15.0'
-    testImplementation 'com.google.truth:truth:1.1.3'
+    testImplementation "io.cucumber:cucumber-java:${cucumberVersion}"
+    testImplementation "io.cucumber:cucumber-spring:${cucumberVersion}"
+    testImplementation "io.cucumber:cucumber-junit-platform-engine:${cucumberVersion}"
+    testImplementation "com.google.truth:truth:${truthVersion}"
 
     // ErrorProne core (required by the plugin)
-    errorprone 'com.google.errorprone:error_prone_core:2.20.0'
+    errorprone "com.google.errorprone:error_prone_core:${errorproneVersion}"
 }
 
 configure(this) {
@@ -174,11 +178,6 @@ configure(this) {
         sourceSets.main.java.outputDir = file("$projectDir/bin/main")
     }
 
-    dependencies {
-        checkstyle 'com.puppycrawl.tools:checkstyle:10.3.1'
-        checkstyle 'com.github.sevntu-checkstyle:sevntu-checks:1.42.0'
-    }
-
     tasks.withType(JavaCompile) {
         options.errorprone {
             enabled = project.gradle.startParameter.taskNames.contains('build') || project.gradle.startParameter.taskNames.contains('check')
@@ -223,7 +222,7 @@ checkstyle {
     configDirectory = file("${projectDir}/config/checkstyle")
     configFile = file("${projectDir}/config/checkstyle/checkstyle.xml")
 }
-description = 'ph-ee-connector-mock-payment-schema'
+description = 'mock-payment-schema'
 sourceCompatibility = JavaVersion.VERSION_21
 targetCompatibility = JavaVersion.VERSION_21
 
@@ -281,10 +280,6 @@ tasks.named('bootJar') {
 
 // Without this the plain jar is produced next to the boot jar and the Dockerfile
 // would have two candidates.
-tasks.named('jar') {
-    enabled = false
-}
-
 tasks.named('jar') {
     enabled = false
 }

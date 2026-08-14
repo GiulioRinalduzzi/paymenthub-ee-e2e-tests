@@ -1,0 +1,25 @@
+# BuildKit reads <dockerfile>.dockerignore in preference to the root
+# .dockerignore, so this file is the root one plus one extra rule.
+#
+# The extra rule: the root .dockerignore has to let mock-payment-schema's boot
+# jar through, because mock-payment-schema/Dockerfile copies it. This image does
+# COPY . and has no use for it, so without this the runner would carry ~100 MB
+# of someone else's jar.
+mock-payment-schema/build
+
+.git
+.github
+.gitignore
+.gradle
+**/.gradle
+build
+**/build
+**/bin
+**/out
+.idea
+**/*.iml
+.vscode
+.settings
+**/.settings
+**/.classpath
+**/.project

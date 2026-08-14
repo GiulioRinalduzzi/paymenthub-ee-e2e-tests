@@ -1,0 +1,23 @@
+# Both Dockerfiles build with the repository root as the context, and
+# integration-test/Dockerfile copies the whole repository, so keep out
+# everything that has no business in an image.
+.git
+.github
+.gitignore
+.gradle
+**/.gradle
+build
+**/build
+**/bin
+**/out
+.idea
+**/*.iml
+.vscode
+.settings
+**/.settings
+**/.classpath
+**/.project
+
+# Exception: mock-payment-schema/Dockerfile copies its boot jar out of build/,
+# so that one path has to survive the rule above.
+!mock-payment-schema/build/libs/app.jar

@@ -10,9 +10,10 @@ rootProject.name = 'paymenthub-ee-e2e-tests'
 
 // integration-test — the end-to-end test suite (former ph-ee-integration-test).
 //                    Cucumber features driven by a JUnit runner, with WireMock
-//                    for the services it needs to fake. It is not a service: it
-//                    ships no Docker image of its own and nothing deploys it.
-//                    You run it against an already-deployed stack.
+//                    for the services it needs to fake. It is not a service.
+//                    Its Dockerfile builds a runner image you exec into, not
+//                    something anything deploys. You run it against an
+//                    already-deployed stack.
 include 'integration-test'
 
 // mock-payment-schema — a stand-in payment scheme used by the tests and by the

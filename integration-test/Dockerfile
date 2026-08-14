@@ -12,5 +12,5 @@ FROM eclipse-temurin:21
 # root, so the module is addressed the Gradle way:
 #   ./gradlew :integration-test:test
 #   ./gradlew :integration-test:test -Dcucumber.filter.tags=@common
-COPY . /ph-ee-connector-integration-test
-WORKDIR /ph-ee-connector-integration-test
+COPY . /integration-test
+WORKDIR /integration-test

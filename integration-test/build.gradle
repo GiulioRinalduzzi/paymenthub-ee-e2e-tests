@@ -120,12 +120,6 @@ configure(this) {
     if (project.hasProperty('env') && project.getProperty('env') == 'eclipse') {
         sourceSets.main.java.outputDir = file("$projectDir/bin/main")
     }
-    // Configuration for the Checkstyle plugin
-    // https://docs.gradle.org/current/userguide/checkstyle_plugin.html
-    dependencies {
-        checkstyle 'com.puppycrawl.tools:checkstyle:10.3.1'
-        checkstyle 'com.github.sevntu-checkstyle:sevntu-checks:1.42.0'
-    }
 }
 
 group = 'org.mifos'
@@ -142,11 +136,7 @@ sourceCompatibility = JavaVersion.VERSION_21
 targetCompatibility = JavaVersion.VERSION_21
 
 repositories {
-    mavenLocal()
     mavenCentral()
-    maven {
-        url = uri('https://repo.maven.apache.org/maven2')
-    }
 
     maven {
         url = uri('https://mifos.jfrog.io/artifactory/phee-gradle-local')
@@ -165,10 +155,10 @@ dependencies {
     // and every other shared library version. Do NOT hardcode managed versions.
     // This is a leaf project (a test suite, nothing depends on it), so
     // enforcedPlatform() is the right choice.
-    implementation enforcedPlatform('org.mifos:paymenthub-ee-bom:2.0.0-SNAPSHOT')
+    implementation enforcedPlatform("org.mifos:paymenthub-ee-bom:${bomVersion}")
     // Annotation processor paths do not inherit from implementation, so the platform
     // has to be declared again here or lombok resolves with no version.
-    testAnnotationProcessor enforcedPlatform('org.mifos:paymenthub-ee-bom:2.0.0-SNAPSHOT')
+    testAnnotationProcessor enforcedPlatform("org.mifos:paymenthub-ee-bom:${bomVersion}")
 
     implementation 'org.springframework.boot:spring-boot-starter'
     // WireMock 2.x ships as wiremock-jre8 and embeds Jetty 9 with javax.servlet.
@@ -196,7 +186,7 @@ dependencies {
     testImplementation 'com.fasterxml.jackson.core:jackson-databind'
     testImplementation 'com.fasterxml.jackson.core:jackson-annotations'
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
-    implementation 'org.mifos:paymenthub-ee-core:2.0.0-SNAPSHOT'
+    implementation "org.mifos:paymenthub-ee-core:${coreVersion}"
     testImplementation "com.google.truth:truth:${truthVersion}"
     testImplementation 'com.google.code.gson:gson'
     testImplementation('io.rest-assured:rest-assured') {
@@ -213,8 +203,9 @@ dependencies {
     checkstyle 'com.puppycrawl.tools:checkstyle:10.9.3'
     checkstyle 'com.github.sevntu-checkstyle:sevntu-checks:1.44.1'
     // Generated Fineract client. The tests import org.apache.fineract.client.models.*
-    // from it. Was 2.0.4-SNAPSHOT on the Fynarfin sandbox; 2.0.4-gazelle is the same
-    // version published on Mifos JFrog.
+    // from it. Was 2.0.4-SNAPSHOT on the Fynarfin sandbox, which no longer resolves.
+    // See gradle.properties for why the replacement is master-gazelle-1 and not
+    // 2.0.4-gazelle.
     implementation "org.mifos:openapi-java-client:${openapiJavaClientVersion}"
     testImplementation 'org.hamcrest:hamcrest'
     implementation "com.opencsv:opencsv:${opencsvVersion}"
